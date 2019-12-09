@@ -159,12 +159,12 @@ public class FXBoxExample extends Application {
 
 	private Pair<Double, Double> calcTreeArea(FileWriter csvWriter, Pane root) throws IOException {
 		String name = ((Label)root.getChildren().get(0)).getText();
-		Pane dirPane = (VBox)root.getChildren().get(1);		
+		Pane dirPane = (Pane)root.getChildren().get(1);		
 		double totalArea = 0;
 		double usedArea = 0;
 		for (Node node : dirPane.getChildren()) {
-			if (node instanceof VBox) {
-				usedArea += calcTreeArea(csvWriter, (VBox)node).getValue();
+			if (node instanceof VBox || node instanceof HBox) {
+				usedArea += calcTreeArea(csvWriter, (Pane)node).getValue();
 			} else {
 				double area = ((Pane)node).getHeight() * ((Pane)node).getWidth(); 
 				usedArea += area;				
@@ -178,11 +178,12 @@ public class FXBoxExample extends Application {
 	private Pane createSubTree(int level, File directory) {
 		
 		// Creating a Flow Pane
-		VBox vBox = new VBox();
+		VBox dirNameBox = new VBox();
 		
 		double maxPaneHeight = 0;
 		double totalArea = 0;
 		double totalPanesHeight = 0;
+		double totalPanesWidth = 0;
 
 		ArrayList<Pane> panes = new ArrayList<Pane>();
 		
@@ -192,15 +193,22 @@ public class FXBoxExample extends Application {
 		//newLabel.setBackground(new Background(new BackgroundFill(Color.CORNFLOWERBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
 
 		//nodes.add(newLabel);		
-		vBox.getChildren().add(newLabel);
+		dirNameBox.getChildren().add(newLabel);
 		
 		
 		Pane dirPane;
-		dirPane = new VBox();
-		// Setting the spacing between the nodes
-		((VBox)dirPane).setSpacing(gap);
-		((VBox)dirPane).setAlignment(Pos.TOP_LEFT); 		
-		vBox.getChildren().add(dirPane);
+		if (level % 2 == 0) {
+			dirPane = new VBox();
+			// Setting the spacing between the nodes
+			((VBox)dirPane).setSpacing(gap);
+			((VBox)dirPane).setAlignment(Pos.TOP_LEFT); 		
+		} else {
+			dirPane = new HBox();
+			// Setting the spacing between the nodes
+			((HBox)dirPane).setSpacing(gap);
+			((HBox)dirPane).setAlignment(Pos.TOP_LEFT); 		
+		}
+		dirNameBox.getChildren().add(dirPane);
 		
 				
 		int numSubDirs = 0;
@@ -230,26 +238,26 @@ public class FXBoxExample extends Application {
 			}
 		}
 			
-		vBox.setSpacing(0);
+		dirNameBox.setSpacing(0);
 		
 		if (usePadding) {dirPane.setPadding(new Insets(gap,gap,gap,gap));}
 		
-		vBox.setPadding(new Insets(1,1,1,1));
+		dirNameBox.setPadding(new Insets(1,1,1,1));
 
 		//flowPane.autosize();
 		
 		// Alignments
-		vBox.setAlignment(Pos.TOP_LEFT); 
+		dirNameBox.setAlignment(Pos.TOP_LEFT); 
 
 		if (showRandomDirectoryBackgroundColor) {
-			vBox.setStyle("-fx-background-color: rgba(" + (randomizer.nextInt(155) + 100) +
+			dirNameBox.setStyle("-fx-background-color: rgba(" + (randomizer.nextInt(155) + 100) +
 					", " + (randomizer.nextInt(155) + 100) + ", " + (randomizer.nextInt(155) + 100) + ", " +
 					1 + "); -fx-background-radius: 10;");
 		} else {
 //			vBox.setStyle("-fx-background-color: rgba(" + 255 + ", " + 255 + ", " + 255 + ", " + 0
 //					+ "); -fx-background-radius: 10; " + (showBorder ? "-fx-border-color: gray" : "")
 //			);
-			vBox.setStyle("-fx-background-color: rgba(" + 240 + ", " + 240 + ", " + 240 + ", " + 1
+			dirNameBox.setStyle("-fx-background-color: rgba(" + 240 + ", " + 240 + ", " + 240 + ", " + 1
 					+ "); -fx-background-radius: 10; " + (showBorder ? "-fx-border-color: gray" : "")
 			);
 
@@ -274,8 +282,15 @@ public class FXBoxExample extends Application {
 												(usePadding ? 2 * gap : 0) /*padding*/ 
 					: (pane instanceof Pane ? ((Pane)pane).getPrefHeight() : 12 /*label*/)
 			);
+			double currentWidth = 
+					(pane instanceof HBox ? ((HBox)pane).getPrefHeight() + 
+												(showBorder ? 2 : 0) /*top + bottom border*/ + 
+												(usePadding ? 2 * gap : 0) /*padding*/ 
+					: (pane instanceof Pane ? ((Pane)pane).getPrefWidth() : 12 /*label*/)
+			);
 			maxPaneHeight = Math.max(maxPaneHeight, currentHeight);
 			totalPanesHeight += currentHeight;
+			totalPanesWidth += currentWidth;
 			totalArea += pane.getPrefHeight() * pane.getPrefWidth();
 //			System.out.println((p instanceof FlowPane ? "Folder" : "File") + ": " + ((Label)p.getChildren().get(0)).getText() + 
 //					" p.PrefHeight: " + p.getPrefHeight() + " p.PrefWidth: " + p.getPrefWidth() + 
@@ -304,11 +319,11 @@ public class FXBoxExample extends Application {
 //				);
 
 			
-		bindTooltip(vBox, tooltip);
+		bindTooltip(dirNameBox, tooltip);
 		bindTooltip(dirPane,tooltip);
 		bindTooltip(newLabel, tooltip);
 
-		return vBox;
+		return dirNameBox;
 	}
 
 	private Pane createFilePane(File file) {
@@ -396,7 +411,7 @@ public class FXBoxExample extends Application {
 		    						&& ((Pane)((Pane)node).getParent()).getChildren().get(0) instanceof Label ? // AND parent has children, the first of which is a Label  
 		    						((Label)((VBox)((Pane)node).getParent()).getChildren().get(0)).getText() :
 		    					// for VBoxes who manage a Label and the child VBox
-		    					node instanceof VBox || node instanceof Pane ? ((Label)((Pane)node).getChildren().get(0)).getText() :		    					
+		    					node instanceof VBox || node instanceof HBox || node instanceof Pane ? ((Label)((Pane)node).getChildren().get(0)).getText() :		    					
 		    						""		    			
 		    	);		    	
 		         tooltip.show(node, event.getScreenX() + 1 , event.getScreenY() - 30);
